@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const admin = require('firebase-admin');
 
 dotenv.config();
 
@@ -12,8 +13,14 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
+// Initialize Firebase Admin (optional for now)
+// const serviceAccount = require('./serviceAccountKey.json');
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
+
 // MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/smart-garbage', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-garbage', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
@@ -21,6 +28,8 @@ mongoose.connect('mongodb://localhost:27017/smart-garbage', {
 .catch(err => console.error('❌ MongoDB Error:', err));
 
 // Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/user', require('./routes/user'));
 app.use('/api/garbage', require('./routes/garbage'));
 app.use('/api/admin', require('./routes/admin'));
 

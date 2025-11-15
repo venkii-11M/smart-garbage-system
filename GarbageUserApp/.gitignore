@@ -1,4 +1,15 @@
 # OSX
+
+# Package lock files
+package-lock.json
+
+# Additional build artifacts that might be missing
+android/app/.cxx/
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+.bundle/
 #
 .DS_Store
 
