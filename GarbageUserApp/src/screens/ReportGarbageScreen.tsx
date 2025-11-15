@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -9,29 +11,31 @@ import {
   Alert,
   ScrollView,
   Platform,
-  PermissionsAndroid
+  PermissionsAndroid,
+  ActivityIndicator
 } from 'react-native';
 import { launchCamera } from 'react-native-image-picker';
 import Geolocation from '@react-native-community/geolocation';
 import { submitGarbageReport } from '../services/api';
+import authService from '../services/authService';
 
-export default function ReportGarbageScreen() {
-  const [photo, setPhoto] = useState(null);
+export default function ReportGarbageScreen({ navigation }: any) {
+  const [photo, setPhoto] = useState<any>(null);
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState(null);
+  const [location, setLocation] = useState<any>(null);
   const [address, setAddress] = useState('Getting location...');
   const [loading, setLoading] = useState(false);
-
-  const user = {
-    _id: '6910c315e14a39f4d4d5bb79', 
-    name: 'Test User',
-    phone: '9876543210',
-    address: '123 Test Street, Amravati'
-  };
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    loadUser();
     requestPermissions();
   }, []);
+
+  const loadUser = async () => {
+    const currentUser = await authService.getCurrentUser();
+    setUser(currentUser);
+  };
 
   const requestPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -70,23 +74,24 @@ export default function ReportGarbageScreen() {
     );
   };
 
-  const takePhoto = async () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 0.7,
-      saveToPhotos: false
-    };
-
-    launchCamera(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled camera');
-      } else if (response.errorCode) {
-        Alert.alert('Error', response.errorMessage);
-      } else if (response.assets && response.assets[0]) {
-        setPhoto(response.assets[0]);
-      }
-    });
+const takePhoto = async () => {
+  const options = {
+    mediaType: 'photo' as const,
+    quality: 1 as any,
+    saveToPhotos: false
   };
+
+
+  launchCamera(options, (response) => {
+    if (response.didCancel) {
+      console.log('User cancelled camera');
+    } else if (response.errorCode) {
+      Alert.alert('Error', response.errorMessage || 'Camera error');
+    } else if (response.assets && response.assets[0]) {
+      setPhoto(response.assets[0]);
+    }
+  });
+};
 
   const submitReport = async () => {
     if (!photo) {
@@ -99,6 +104,11 @@ export default function ReportGarbageScreen() {
       return;
     }
 
+    if (!user) {
+      Alert.alert('Error', 'User not logged in');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -107,7 +117,7 @@ export default function ReportGarbageScreen() {
         userId: user._id,
         userName: user.name,
         userPhone: user.phone,
-        userAddress: user.address,
+        userAddress: user.address || '',
         description: description,
         latitude: location.latitude,
         longitude: location.longitude,
@@ -119,7 +129,7 @@ export default function ReportGarbageScreen() {
       if (response.success) {
         Alert.alert(
           'Success!',
-          'Garbage report submitted successfully. Collectors will be notified.',
+          'Garbage report submitted successfully.',
           [
             {
               text: 'OK',
@@ -127,14 +137,25 @@ export default function ReportGarbageScreen() {
                 setPhoto(null);
                 setDescription('');
                 getCurrentLocation();
+                navigation.navigate('MyReports');
               }
             }
           ]
         );
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit report. Please try again.');
       console.error('Submit error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit report. Please try again.';
+      Alert.alert(
+        'Submission Failed',
+        errorMessage,
+        [
+          {
+            text: 'OK',
+            onPress: () => console.log('Error acknowledged')
+          }
+        ]
+      );
     } finally {
       setLoading(false);
     }
@@ -143,9 +164,6 @@ export default function ReportGarbageScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>🗑️ Report Garbage</Text>
-        <Text style={styles.subtitle}>Help keep your city clean</Text>
-
         {/* Photo Section */}
         <View style={styles.photoSection}>
           {photo ? (
@@ -175,8 +193,8 @@ export default function ReportGarbageScreen() {
         {/* User Info */}
         <View style={styles.infoSection}>
           <Text style={styles.label}>👤 Your Information:</Text>
-          <Text style={styles.infoText}>Name: {user.name}</Text>
-          <Text style={styles.infoText}>Phone: {user.phone}</Text>
+          <Text style={styles.infoText}>Name: {user?.name}</Text>
+          <Text style={styles.infoText}>Phone: {user?.phone}</Text>
         </View>
 
         {/* Description */}
@@ -198,9 +216,11 @@ export default function ReportGarbageScreen() {
           onPress={submitReport}
           disabled={loading}
         >
-          <Text style={styles.submitButtonText}>
-            {loading ? '⏳ Submitting...' : '✓ Submit Report'}
-          </Text>
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.submitButtonText}>✓ Submit Report</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -215,29 +235,18 @@ const styles = StyleSheet.create({
   content: {
     padding: 20
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333'
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20
-  },
   photoSection: {
     marginBottom: 20
   },
   photoPreview: {
     width: '100%',
-    height: 300,
+    height: 250,
     borderRadius: 10,
     marginBottom: 10
   },
   photoPlaceholder: {
     width: '100%',
-    height: 300,
+    height: 250,
     backgroundColor: '#e0e0e0',
     borderRadius: 10,
     justifyContent: 'center',
@@ -308,10 +317,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#e0e0e0'
+    borderColor: '#e0e0e0',
+    minHeight: 100
   },
   submitButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#2E7D32',
     padding: 18,
     borderRadius: 10,
     alignItems: 'center',
