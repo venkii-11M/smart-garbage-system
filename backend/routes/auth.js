@@ -76,6 +76,48 @@ router.post('/login/user', async (req, res) => {
   }
 });
 
+// Collector Registration
+router.post('/register/collector', async (req, res) => {
+  try {
+    const { name, phone, email, password, vehicleNumber, area } = req.body;
+
+    const existingCollector = await Collector.findOne({ $or: [{ email }, { phone }] });
+    if (existingCollector) {
+      return res.status(400).json({ 
+        error: 'Collector with this email or phone already exists' 
+      });
+    }
+
+    const collector = new Collector({
+      name,
+      phone,
+      email,
+      password,
+      vehicleNumber,
+      area
+    });
+
+    await collector.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Collector registered successfully',
+      collector: {
+        _id: collector._id,
+        name: collector.name,
+        email: collector.email,
+        phone: collector.phone,
+        vehicleNumber: collector.vehicleNumber,
+        area: collector.area
+      }
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Collector Login
 router.post('/login/collector', async (req, res) => {
   try {
