@@ -2,18 +2,16 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 
 // For Android Emulator use: http://10.0.2.2:5000/api
-// For iOS Simulator use: http://localhost:5000/api
 // For physical device use your computer's IP: http://10.150.123.154:5000/api
 const getApiUrl = () => {
-  // Your computer's actual IP address
-  const COMPUTER_IP = '10.0.2.2'; // Your computer's IP address
+
+  const COMPUTER_IP = '10.0.2.2';
   
   if (Platform.OS === 'android') {
-    // Check if running on physical device vs emulator
-    // Physical devices need your computer's IP, emulators use 10.0.2.2
+
     return `http://${COMPUTER_IP}:5000/api`;
   } else {
-    // For iOS, use computer IP for physical device, localhost for simulator
+  
     return `http://${COMPUTER_IP}:5000/api`;
   }
 };

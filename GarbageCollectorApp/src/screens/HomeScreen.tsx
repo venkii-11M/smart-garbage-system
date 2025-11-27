@@ -45,7 +45,6 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome Back!</Text>
         <Text style={styles.collectorName}>{collector?.name}</Text>
         <Text style={styles.vehicleInfo}>🚛 {collector?.vehicleNumber}</Text>
       </View>

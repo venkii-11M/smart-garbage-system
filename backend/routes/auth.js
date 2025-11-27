@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const Collector = require('../models/Collector');
 
@@ -16,12 +17,15 @@ router.post('/register/user', async (req, res) => {
       });
     }
 
-    // Create user (in production, hash password with bcrypt)
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
     const user = new User({
       name,
       phone,
       email,
-      password, // In production: await bcrypt.hash(password, 10)
+      password: hashedPassword,
       address
     });
 
@@ -54,8 +58,9 @@ router.post('/login/user', async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // In production: const isMatch = await bcrypt.compare(password, user.password);
-    if (password !== user.password) {
+    // Compare password with hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
@@ -81,6 +86,15 @@ router.post('/register/collector', async (req, res) => {
   try {
     const { name, phone, email, password, vehicleNumber, area } = req.body;
 
+    // Validate required fields
+    if (!name || !phone || !email || !password) {
+      return res.status(400).json({ 
+        error: 'Name, phone, email, and password are required' 
+      });
+    }
+
+    console.log('Registration attempt:', { name, phone, email, hasPassword: !!password });
+
     const existingCollector = await Collector.findOne({ $or: [{ email }, { phone }] });
     if (existingCollector) {
       return res.status(400).json({ 
@@ -88,16 +102,22 @@ router.post('/register/collector', async (req, res) => {
       });
     }
 
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Password hashed successfully');
+
     const collector = new Collector({
       name,
       phone,
       email,
-      password,
+      password: hashedPassword,
       vehicleNumber,
       area
     });
 
+    console.log('Collector object created, attempting to save...');
     await collector.save();
+    console.log('Collector saved successfully with ID:', collector._id);
 
     res.status(201).json({
       success: true,
@@ -128,7 +148,9 @@ router.post('/login/collector', async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    if (password !== collector.password) {
+    // Compare password with hashed password
+    const isMatch = await bcrypt.compare(password, collector.password);
+    if (!isMatch) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 

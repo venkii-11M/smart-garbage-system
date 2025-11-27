@@ -6,6 +6,7 @@ const collectorSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   vehicleNumber: { type: String },
   area: { type: String },
+  password: { type: String, required: true },
   fcmToken: { type: String },
   isActive: { type: Boolean, default: true },
   totalCollected: { type: Number, default: 0 },

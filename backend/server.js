@@ -14,17 +14,8 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 app.use('/api/collector', require('./routes/collector'));
 
-// Initialize Firebase Admin (optional for now)
-// const serviceAccount = require('./serviceAccountKey.json');
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount)
-// });
-
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-garbage', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-garbage')
 .then(() => console.log('✅ MongoDB Connected'))
 .catch(err => console.error('❌ MongoDB Error:', err));
 
@@ -33,6 +24,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/garbage', require('./routes/garbage'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/collector', require('./routes/collector'));
 
 // Health check
 app.get('/', (req, res) => {
